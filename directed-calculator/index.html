@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Directed Group — Platform Investment Calculator | Lightning Ventures</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: #F5F3EF; color: #1A1A2E; min-height: 100vh; }
+
+  .topbar { background: #6B3CE7; padding: 10px 32px; text-align: center; }
+  .topbar span { font-size: 12px; font-weight: 700; color: #fff; letter-spacing: 0.04em; }
+
+  .header { padding: 32px 32px 24px; max-width: 1400px; }
+  .header h1 { font-size: 32px; font-weight: 900; letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 6px; }
+  .header p { font-size: 14px; color: #555566; max-width: 600px; }
+
+  .layout { display: flex; flex-wrap: wrap; max-width: 1400px; }
+
+  .panel-left { width: 350px; min-width: 310px; padding: 0 28px 32px; flex-shrink: 0; }
+  .panel-right { flex: 1; min-width: 420px; padding: 0 32px 32px 16px; }
+
+  .card { background: #fff; border-radius: 16px; border: 1px solid #E0DDD6; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 16px; }
+
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; margin-top: 6px; }
+  .section-num { background: #6B3CE7; color: #fff; font-size: 11px; font-weight: 800; width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; }
+  .section-title { font-size: 16px; font-weight: 800; }
+  .section-sub { font-size: 12px; color: #8E8E9F; margin-left: 34px; margin-top: -14px; margin-bottom: 14px; }
+
+  .slider-group { margin-bottom: 22px; }
+  .slider-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .slider-label { font-size: 13px; font-weight: 600; }
+  .slider-value { font-size: 17px; font-weight: 700; color: #6B3CE7; font-family: 'Space Mono', monospace; }
+  .slider-desc { font-size: 11px; color: #8E8E9F; margin-bottom: 6px; }
+  input[type=range] { width: 100%; accent-color: #6B3CE7; height: 5px; cursor: pointer; }
+  .slider-minmax { display: flex; justify-content: space-between; font-size: 10px; color: #8E8E9F; margin-top: 2px; }
+
+  .metrics { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+  .metric { background: #fff; border: 1px solid #E0DDD6; border-radius: 14px; padding: 18px 22px; flex: 1; min-width: 160px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .metric-label { font-size: 10.5px; color: #8E8E9F; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 700; }
+  .metric-value { font-size: 26px; font-weight: 800; font-family: 'Space Mono', monospace; line-height: 1.1; }
+  .metric-sub { font-size: 11px; color: #8E8E9F; margin-top: 5px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 18px; }
+  .tab { padding: 9px 20px; border-radius: 10px; border: 1.5px solid #E0DDD6; background: #fff; color: #8E8E9F; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+  .tab.active { border-color: #6B3CE7; background: rgba(107,60,231,0.08); color: #6B3CE7; }
+
+  .chart-card { background: #fff; border-radius: 16px; border: 1px solid #E0DDD6; padding: 22px 18px 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .chart-title { font-size: 15px; font-weight: 800; margin-bottom: 2px; padding-left: 8px; }
+  .chart-sub { font-size: 11px; color: #8E8E9F; margin-bottom: 18px; padding-left: 8px; }
+  canvas { max-height: 320px; }
+
+  .table-wrap { margin-top: 24px; background: #fff; border-radius: 16px; border: 1px solid #E0DDD6; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .table-header { padding: 18px 22px 12px; }
+  .table-header h3 { font-size: 15px; font-weight: 800; }
+  .table-header p { font-size: 11px; color: #8E8E9F; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; font-family: 'Space Mono', monospace; font-size: 11px; }
+  th { padding: 11px 16px; text-align: right; color: #8E8E9F; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #E0DDD6; background: #F5F3EF; }
+  th:first-child { text-align: center; }
+  td { padding: 11px 16px; text-align: right; border-bottom: 1px solid #EBE8E2; }
+  td:first-child { text-align: center; }
+
+  .benefits { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; margin-bottom: 32px; }
+  .benefit { flex: 1 1 200px; background: #fff; border: 1px solid #E0DDD6; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .benefit-icon { font-size: 22px; margin-bottom: 8px; }
+  .benefit-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+  .benefit-desc { font-size: 11px; color: #555566; line-height: 1.55; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    .panel-left, .panel-right { width: 100%; min-width: 0; padding: 0 16px 24px; }
+    .metrics { flex-direction: column; }
+    .metric { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar"><span>⚡ LIGHTNING VENTURES — Directed Group Platform Investment Model</span></div>
+
+<div class="header">
+  <h1>Platform Investment Calculator</h1>
+  <p>Model the cost of building a shared app platform vs. continuing with Chinese vendor apps</p>
+</div>
+
+<div class="layout">
+  <div class="panel-left">
+
+    <div class="card">
+      <div class="section-header"><span class="section-num">1</span><span class="section-title">Current State</span></div>
+      <div class="section-sub">What you're paying vendors today</div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Total Apps</span><span class="slider-value" id="v-apps">50</span></div>
+        <div class="slider-desc">~6 brands, ~50 apps across all vendors</div>
+        <input type="range" id="s-apps" min="1" max="80" step="1" value="50" oninput="update()">
+        <div class="slider-minmax"><span>1</span><span>80</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Cost Per App / Year</span><span class="slider-value" id="v-cost">$20K</span></div>
+        <div class="slider-desc">Current vendor cost: $15K–$25K USD</div>
+        <input type="range" id="s-cost" min="10000" max="40000" step="1000" value="20000" oninput="update()">
+        <div class="slider-minmax"><span>$10K</span><span>$40K</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Vendor Cost Inflation</span><span class="slider-value" id="v-inflation">10% / yr</span></div>
+        <div class="slider-desc">Costs already rising every few months</div>
+        <input type="range" id="s-inflation" min="0" max="25" step="1" value="10" oninput="update()">
+        <div class="slider-minmax"><span>0% / yr</span><span>25% / yr</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header"><span class="section-num">2</span><span class="section-title">New Platform</span></div>
+      <div class="section-sub">Shared multi-tenant architecture</div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Platform Build Cost</span><span class="slider-value" id="v-build">$300K</span></div>
+        <div class="slider-desc">One-off capex: architecture, backend, templates</div>
+        <input type="range" id="s-build" min="50000" max="800000" step="10000" value="300000" oninput="update()">
+        <div class="slider-minmax"><span>$50K</span><span>$800K</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Cost Per New App</span><span class="slider-value" id="v-perapp">$5K</span></div>
+        <div class="slider-desc">Incremental cost to onboard each new brand app</div>
+        <input type="range" id="s-perapp" min="1000" max="20000" step="500" value="5000" oninput="update()">
+        <div class="slider-minmax"><span>$1K</span><span>$20K</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Annual Infrastructure</span><span class="slider-value" id="v-infra">$60K</span></div>
+        <div class="slider-desc">Hosting, load balancing, Firebase, CI/CD</div>
+        <input type="range" id="s-infra" min="10000" max="200000" step="5000" value="60000" oninput="update()">
+        <div class="slider-minmax"><span>$10K</span><span>$200K</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Annual Support / Partner</span><span class="slider-value" id="v-support">$48K</span></div>
+        <div class="slider-desc">Lightning managed services retainer</div>
+        <input type="range" id="s-support" min="0" max="150000" step="5000" value="48000" oninput="update()">
+        <div class="slider-minmax"><span>$0</span><span>$150K</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header"><span class="section-num">3</span><span class="section-title">Rollout</span></div>
+      <div class="section-sub">Migration pace and timeline</div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Apps Onboarded / Quarter</span><span class="slider-value" id="v-pace">4</span></div>
+        <div class="slider-desc">Start with 1 brand, scale from there</div>
+        <input type="range" id="s-pace" min="1" max="15" step="1" value="4" oninput="update()">
+        <div class="slider-minmax"><span>1</span><span>15</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-top"><span class="slider-label">Projection Period</span><span class="slider-value" id="v-years">5 years</span></div>
+        <input type="range" id="s-years" min="3" max="10" step="1" value="5" oninput="update()">
+        <div class="slider-minmax"><span>3 years</span><span>10 years</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Breakeven</div><div class="metric-value" id="m-breakeven" style="color:#6B3CE7">—</div><div class="metric-sub" id="m-breakeven-sub"></div></div>
+      <div class="metric"><div class="metric-label" id="m-savings-label">5-Year Savings</div><div class="metric-value" id="m-savings">—</div><div class="metric-sub">Cumulative vs vendor model</div></div>
+      <div class="metric"><div class="metric-label">ROI on Build</div><div class="metric-value" id="m-roi">—</div><div class="metric-sub" id="m-roi-sub"></div></div>
+      <div class="metric"><div class="metric-label">Current Annual Spend</div><div class="metric-value" id="m-spend" style="color:#F5A623">—</div><div class="metric-sub" id="m-spend-sub"></div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview')">Annual Comparison</button>
+      <button class="tab" onclick="switchTab('cumulative')">Cumulative Cost</button>
+      <button class="tab" onclick="switchTab('perapp')">Cost Per App</button>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title" id="chart-title">Annual Cost Comparison</div>
+      <div class="chart-sub" id="chart-sub">Vendor model vs new platform — year by year</div>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header"><h3>Year-by-Year Breakdown</h3><p>Detailed projections across all metrics</p></div>
+      <div style="overflow-x:auto"><table><thead><tr>
+        <th style="text-align:center">Year</th><th>Apps Live</th><th>Vendor Cost</th><th>Platform Cost</th><th>Annual Saving</th><th>Cumulative</th>
+      </tr></thead><tbody id="tableBody"></tbody></table></div>
+    </div>
+
+    <div class="benefits">
+      <div class="benefit"><div class="benefit-icon">⚡</div><div class="benefit-title">Full Control</div><div class="benefit-desc">Own the software layer, decouple from Chinese vendor backends</div></div>
+      <div class="benefit"><div class="benefit-icon">🚀</div><div class="benefit-title">Velocity</div><div class="benefit-desc">Template new brand apps in days, not months</div></div>
+      <div class="benefit"><div class="benefit-icon">🧩</div><div class="benefit-title">Modular</div><div class="benefit-desc">Plug-and-play features, no vendor lock-in to any partner</div></div>
+      <div class="benefit"><div class="benefit-icon">📈</div><div class="benefit-title">Future-Proof</div><div class="benefit-desc">Modern stack, AI tooling, CI/CD — costs go down over time</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = v => Math.abs(v) >= 1e6 ? `$${(v/1e6).toFixed(2)}M` : Math.abs(v) >= 1e3 ? `$${(v/1e3).toFixed(0)}K` : `$${v.toFixed(0)}`;
+
+let chart = null;
+let currentTab = 'overview';
+
+function getInputs() {
+  return {
+    apps: +document.getElementById('s-apps').value,
+    cost: +document.getElementById('s-cost').value,
+    inflation: +document.getElementById('s-inflation').value,
+    build: +document.getElementById('s-build').value,
+    perapp: +document.getElementById('s-perapp').value,
+    infra: +document.getElementById('s-infra').value,
+    support: +document.getElementById('s-support').value,
+    pace: +document.getElementById('s-pace').value,
+    years: +document.getElementById('s-years').value,
+  };
+}
+
+function compute(inp) {
+  const rows = [];
+  let cumV = 0, cumP = inp.build, onboarded = 0;
+  for (let y = 1; y <= inp.years; y++) {
+    const vcost = inp.cost * Math.pow(1 + inp.inflation / 100, y - 1);
+    const annV = inp.apps * vcost;
+    cumV += annV;
+    const newApps = Math.min(inp.pace * 4, inp.apps - onboarded);
+    onboarded = Math.min(onboarded + newApps, inp.apps);
+    const onboardCost = newApps * inp.perapp;
+    const remVendor = (inp.apps - onboarded) * vcost;
+    const scale = 1 + (onboarded / inp.apps) * 0.4;
+    const infraY = inp.infra * scale;
+    const annP = onboardCost + infraY + inp.support + remVendor;
+    cumP += annP;
+    const perAppP = onboarded > 0 ? (infraY + inp.support) / onboarded : 0;
+    rows.push({ year: y, annV: Math.round(annV), annP: Math.round(annP), cumV: Math.round(cumV), cumP: Math.round(cumP), savings: Math.round(cumV - cumP), onboarded, perAppV: Math.round(vcost), perAppP: Math.round(perAppP), annSav: Math.round(annV - annP) });
+  }
+  return rows;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['overview','cumulative','perapp'][i] === tab);
+  });
+  update();
+}
+
+function update() {
+  const inp = getInputs();
+
+  document.getElementById('v-apps').textContent = inp.apps;
+  document.getElementById('v-cost').textContent = fmt(inp.cost);
+  document.getElementById('v-inflation').textContent = inp.inflation + '% / yr';
+  document.getElementById('v-build').textContent = fmt(inp.build);
+  document.getElementById('v-perapp').textContent = fmt(inp.perapp);
+  document.getElementById('v-infra').textContent = fmt(inp.infra);
+  document.getElementById('v-support').textContent = fmt(inp.support);
+  document.getElementById('v-pace').textContent = inp.pace;
+  document.getElementById('v-years').textContent = inp.years + ' years';
+
+  const data = compute(inp);
+  const last = data[data.length - 1];
+  const be = data.findIndex(d => d.savings > 0);
+
+  document.getElementById('m-breakeven').textContent = be >= 0 ? `Year ${data[be].year}` : 'N/A';
+  document.getElementById('m-breakeven').style.color = '#6B3CE7';
+  document.getElementById('m-breakeven-sub').textContent = be >= 0 ? 'Investment pays for itself' : 'Adjust inputs';
+
+  const sav = last.savings;
+  document.getElementById('m-savings-label').textContent = inp.years + '-Year Savings';
+  document.getElementById('m-savings').textContent = sav > 0 ? fmt(sav) : '-' + fmt(Math.abs(sav));
+  document.getElementById('m-savings').style.color = sav > 0 ? '#2EAD6B' : '#E05A3A';
+
+  const roi = inp.build > 0 ? (sav / inp.build * 100) : 0;
+  document.getElementById('m-roi').textContent = (roi > 0 ? '+' : '') + roi.toFixed(0) + '%';
+  document.getElementById('m-roi').style.color = roi > 0 ? '#2EAD6B' : '#E05A3A';
+  document.getElementById('m-roi-sub').textContent = 'On ' + fmt(inp.build) + ' investment';
+
+  document.getElementById('m-spend').textContent = fmt(inp.apps * inp.cost);
+  document.getElementById('m-spend-sub').textContent = inp.apps + ' apps × ' + fmt(inp.cost);
+
+  // Table
+  let html = '';
+  data.forEach(d => {
+    html += `<tr>
+      <td style="color:#6B3CE7;font-weight:700">Y${d.year}</td>
+      <td>${d.onboarded}/${inp.apps}</td>
+      <td style="color:#F5A623;font-weight:600">${fmt(d.annV)}</td>
+      <td style="color:#6B3CE7;font-weight:600">${fmt(d.annP)}</td>
+      <td style="color:${d.annSav > 0 ? '#2EAD6B' : '#E05A3A'};font-weight:700">${d.annSav > 0 ? '+' : ''}${fmt(d.annSav)}</td>
+      <td style="color:${d.savings > 0 ? '#2EAD6B' : '#E05A3A'};font-weight:700">${d.savings > 0 ? '+' : ''}${fmt(d.savings)}</td>
+    </tr>`;
+  });
+  document.getElementById('tableBody').innerHTML = html;
+
+  // Chart
+  if (chart) chart.destroy();
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  const labels = data.map(d => 'Y' + d.year);
+
+  if (currentTab === 'overview') {
+    document.getElementById('chart-title').textContent = 'Annual Cost Comparison';
+    document.getElementById('chart-sub').textContent = 'Vendor model vs new platform — year by year';
+    chart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [
+      { label: 'Vendor Model', data: data.map(d => d.annV), backgroundColor: '#F5A623', borderRadius: 5 },
+      { label: 'New Platform', data: data.map(d => d.annP), backgroundColor: '#6B3CE7', borderRadius: 5 },
+    ]}, options: { responsive: true, plugins: { legend: { labels: { font: { size: 11 }}}}, scales: { y: { ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v, font: { family: "'Space Mono', monospace", size: 10 }}, grid: { color: '#EBE8E2' }}, x: { ticks: { font: { family: "'Space Mono', monospace", size: 11 }}, grid: { display: false }}}}});
+  } else if (currentTab === 'cumulative') {
+    document.getElementById('chart-title').textContent = 'Cumulative Total Cost';
+    document.getElementById('chart-sub').textContent = 'The crossover point — when the platform starts saving money';
+    chart = new Chart(ctx, { type: 'line', data: { labels, datasets: [
+      { label: 'Vendor (Cumulative)', data: data.map(d => d.cumV), borderColor: '#F5A623', backgroundColor: 'rgba(245,166,35,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 },
+      { label: 'Platform (Cumulative)', data: data.map(d => d.cumP), borderColor: '#6B3CE7', backgroundColor: 'rgba(107,60,231,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2.5 },
+    ]}, options: { responsive: true, plugins: { legend: { labels: { font: { size: 11 }}}}, scales: { y: { ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v, font: { family: "'Space Mono', monospace", size: 10 }}, grid: { color: '#EBE8E2' }}, x: { ticks: { font: { family: "'Space Mono', monospace", size: 11 }}, grid: { display: false }}}}});
+  } else {
+    document.getElementById('chart-title').textContent = 'Cost Per App at Scale';
+    document.getElementById('chart-sub').textContent = 'How per-app cost drops as more apps join the shared platform';
+    const scalePoints = [1, 5, 10, 25, 50].filter(n => n <= inp.apps);
+    const scaleLabels = scalePoints.map(n => n + (n > 1 ? ' apps' : ' app'));
+    const scaleVendor = scalePoints.map(() => inp.cost);
+    const scalePlatform = scalePoints.map(n => { const s = 1 + (n / inp.apps) * 0.4; return Math.round((inp.infra * s + inp.support) / n); });
+    chart = new Chart(ctx, { type: 'bar', data: { labels: scaleLabels, datasets: [
+      { label: 'Vendor Per App', data: scaleVendor, backgroundColor: '#F5A623', borderRadius: 5 },
+      { label: 'Platform Per App', data: scalePlatform, backgroundColor: '#6B3CE7', borderRadius: 5 },
+    ]}, options: { responsive: true, plugins: { legend: { labels: { font: { size: 11 }}}}, scales: { y: { ticks: { callback: v => v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v, font: { family: "'Space Mono', monospace", size: 10 }}, grid: { color: '#EBE8E2' }}, x: { ticks: { font: { family: "'Space Mono', monospace", size: 11 }}, grid: { display: false }}}}});
+  }
+}
+
+update();
+</script>
+</body>
+</html>
